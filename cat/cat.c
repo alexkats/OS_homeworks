@@ -22,7 +22,7 @@ int main ()
 			return 1;
 		}
 
-		whave = write_(STDOUT_FILENO, buf, size);
+		whave = write_(STDOUT_FILENO, buf, rhave);
 
 		if (whave == -1)
 		{
@@ -30,7 +30,7 @@ int main ()
 			return 1;
 		}
 
-		if (rhave != whave)
+		if (rhave > whave)
 		{
 			fprintf(stderr, "Cannot output everything in file\n");
 			return 1;

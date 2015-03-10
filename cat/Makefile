@@ -1,19 +1,21 @@
 CC=gcc
-CFLAGS=-Wall -I../lib 
+CFLAGS=-Wall -I../lib
 LDFLAGS=-L../lib -lhelpers
 PROJECT=cat
 
 all: $(PROJECT)
-
-$(PROJECT): $(PROJECT).o libhelpers.so
-	$(CC) -o $@ $(LDFLAGS) $<
-
-$(PROJECT).o:
-	$(CC) -o $@ -c $(CFLAGS) $(PROJECT).c
+#	install_name_tool -change libhelpers.so ../lib/libhelpers.so ./cat
 
 libhelpers.so:
 	$(MAKE) -C ../lib
 
+$(PROJECT).o:
+	$(CC) -o $@ -c $(CFLAGS) $(PROJECT).c
+
+$(PROJECT): $(PROJECT).o libhelpers.so
+	$(CC) -o $@ $(LDFLAGS) $<
+
 clean:
 	rm -f $(PROJECT).o
 	rm -f $(PROJECT)
+	$(MAKE) -C ../lib clean
