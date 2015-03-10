@@ -3,16 +3,15 @@ CFLAGS=-Wall -I../lib
 LDFLAGS=-L../lib -lhelpers
 PROJECT=cat
 
-all:
-	$(PROJECT)
+all: $(PROJECT)
 
-$(PROJECT):
-	$(CC) -o $@ $(LDFLAGS) ../lib/libhelpers.so
+$(PROJECT): $(PROJECT).o libhelpers.so
+	$(CC) -o $@ $(LDFLAGS) $<
 
 $(PROJECT).o:
 	$(CC) -o $@ -c $(CFLAGS) $(PROJECT).c
 
-../lib/libhelpers.so:
+libhelpers.so:
 	$(MAKE) -C ../lib
 
 clean:

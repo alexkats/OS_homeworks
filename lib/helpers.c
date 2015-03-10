@@ -1,4 +1,4 @@
-#include <unistd.h>
+#include "helpers.h"
 
 ssize_t read_(int fd, void* buf, size_t count)
 {
@@ -9,22 +9,19 @@ ssize_t read_(int fd, void* buf, size_t count)
 	{
 		have = read(fd, (char*) buf + res, count);
 
-		switch (have)
-		{
-			case 0:
-				return res;
-			case -1:
-				return -1;
-			case count:
-				return have + res;
-		}
+		if (have == 0)
+			return res;
+		else if (have == -1)
+			return -1;
+		else if (have == count)
+			return have + res;
 
 		res += have;
 		count -= have;
 	}
 }
 
-ssize_t write_(int fd, void* buf, size_t count)
+ssize_t write_(int fd, const void* buf, size_t count)
 {
 	int have = 0;
 	int res = 0;
@@ -33,13 +30,10 @@ ssize_t write_(int fd, void* buf, size_t count)
 	{
 		have = write(fd, (char*) buf + res, count);
 
-		switch (have)
-		{
-			case -1:
-				return -1;
-			case count:
-				return have + res;
-		}
+		if (have == -1)
+			return -1;
+		else if (have == count)
+			return have + res;
 
 		res += have;
 		count -= have;
