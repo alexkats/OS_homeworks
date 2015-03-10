@@ -10,7 +10,7 @@ $(PROJECT):
 	$(CC) -o $@ $(LDFLAGS) ../lib/libhelpers.so
 
 $(PROJECT).o:
-	$(CC) -o $@ -c $(CFLANG) $(PROJECT).c
+	$(CC) -o $@ -c $(CFLAGS) $(PROJECT).c
 
 ../lib/libhelpers.so:
 	$(MAKE) -C ../lib
