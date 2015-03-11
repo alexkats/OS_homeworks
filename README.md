@@ -1,2 +1,2 @@
 # OS_homeworks
-Me OS homework are stored here
+My OS homeworks are stored here
