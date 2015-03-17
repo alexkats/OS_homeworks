@@ -4,7 +4,7 @@ LDFLAGS=-L../lib -lhelpers
 PROJECT=revwords
 
 all: $(PROJECT)
-#	install_name_tool -change libhelpers.so ../lib/libhelpers.so ./cat
+#	install_name_tool -change libhelpers.so ../lib/libhelpers.so ./revwords
 	rm -f $(PROJECT).o
 
 libhelpers.so:
