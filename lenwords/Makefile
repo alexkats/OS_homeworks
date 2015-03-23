@@ -4,7 +4,7 @@ LDFLAGS=-L../lib -lhelpers
 PROJECT=lenwords
 
 all: $(PROJECT)
-#	install_name_tool -change libhelpers.so ../lib/libhelpers.so ./lenwords
+	install_name_tool -change libhelpers.so ../lib/libhelpers.so ./lenwords
 	rm -f $(PROJECT).o
 
 libhelpers.so:
