@@ -64,3 +64,35 @@ ssize_t read_until(int fd, void* buf, size_t count, char delimeter)
         count -= have;
     }
 }
+
+int spawn(const char* file, char* const argv[])
+{
+    int process_id = fork();
+
+    if (process_id == -1)
+        return -1;
+
+    if (process_id != 0)
+    {
+        int status;
+        wait(&status);
+
+        if (!WIFEXITED(status))
+        {
+            fprintf(stderr, "%s\n", strerror(errno));
+            return -1;
+        }
+
+        return WEXITSTATUS(status);
+    }
+
+    int result = execvp(file, argv);
+
+    if (result == -1)
+    {
+        fprintf(stderr, "%s\n", strerror(errno));
+        return -1;
+    }
+
+    return -1;
+}

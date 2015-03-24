@@ -1,9 +1,9 @@
 all:
 	$(MAKE) -C cat
 	$(MAKE) -C revwords
-	$(MAKE) -C lenwords
+	$(MAKE) -C filter
 
 clean:
 	$(MAKE) -C cat clean
 	$(MAKE) -C revwords clean
-	$(MAKE) -C lenwords clean
+	$(MAKE) -C filter clean
