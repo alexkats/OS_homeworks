@@ -78,7 +78,7 @@ int spawn(const char* file, char* const argv[])
     if (process_id != 0)
     {
         int status;
-        wait(&status);
+        waitpid(process_id, &status, 0);
 
         if (!WIFEXITED(status))
         {
