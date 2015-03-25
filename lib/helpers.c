@@ -67,10 +67,13 @@ ssize_t read_until(int fd, void* buf, size_t count, char delimeter)
 
 int spawn(const char* file, char* const argv[])
 {
-    int process_id = fork();
+    pid_t process_id = fork();
 
     if (process_id == -1)
+    {
+        fprintf(stderr, "%s\n", strerror(errno));
         return -1;
+    }
 
     if (process_id != 0)
     {
@@ -94,5 +97,5 @@ int spawn(const char* file, char* const argv[])
         return -1;
     }
 
-    return -1;
+    return -1; //Never reaches
 }

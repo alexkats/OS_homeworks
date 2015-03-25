@@ -4,7 +4,7 @@ LDFLAGS=-L../lib -lhelpers
 PROJECT=filter
 
 all: $(PROJECT)
-#	install_name_tool -change libhelpers.so ../lib/libhelpers.so ./filter
+	install_name_tool -change libhelpers.so ../lib/libhelpers.so ./filter
 	rm -f $(PROJECT).o
 
 libhelpers.so:
@@ -19,4 +19,5 @@ $(PROJECT): $(PROJECT).o libhelpers.so
 clean:
 	rm -f $(PROJECT).o
 	rm -f $(PROJECT)
+	rm -f /tmp/filter.tar
 	$(MAKE) -C ../lib clean

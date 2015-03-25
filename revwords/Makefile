@@ -4,7 +4,7 @@ LDFLAGS=-L../lib -lhelpers
 PROJECT=revwords
 
 all: $(PROJECT)
-	install_name_tool -change libhelpers.so ../lib/libhelpers.so ./revwords
+#	install_name_tool -change libhelpers.so ../lib/libhelpers.so ./revwords
 	rm -f $(PROJECT).o
 
 libhelpers.so:
@@ -19,5 +19,4 @@ $(PROJECT): $(PROJECT).o libhelpers.so
 clean:
 	rm -f $(PROJECT).o
 	rm -f $(PROJECT)
-	rm -f $(PROJECT)2.c
 	$(MAKE) -C ../lib clean
