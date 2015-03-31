@@ -1,7 +1,7 @@
 CC=gcc
 CFLAGS=-Wall -I../lib -std=c99
 LDFLAGS=-L../lib
-LIBS=../lib/libhelpers.so
+LIBS=../lib/libhelpers.so -lhelpers
 PROJECT=filter
 
 all: $(PROJECT)
