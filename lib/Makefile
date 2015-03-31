@@ -1,5 +1,5 @@
 CC=gcc
-CFLAGS=-Wall -fPIC
+CFLAGS=-Wall -fPIC -std=c99
 
 all: libhelpers.so
 	rm -f helpers.o

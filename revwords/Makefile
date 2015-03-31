@@ -1,6 +1,7 @@
 CC=gcc
-CFLAGS=-Wall -I../lib
-LDFLAGS=-L../lib -lhelpers
+CFLAGS=-Wall -I../lib -std=c99
+LDFLAGS=-L../lib
+LIBS=../lib/libhelpers.so -lhelpers
 PROJECT=revwords
 
 all: $(PROJECT)
@@ -14,7 +15,7 @@ $(PROJECT).o:
 	$(CC) -o $@ -c $(CFLAGS) $(PROJECT).c
 
 $(PROJECT): $(PROJECT).o libhelpers.so
-	$(CC) -o $@ $(LDFLAGS) $<
+	$(CC) -o $@ $(LDFLAGS) $< $(LIBS)
 
 clean:
 	rm -f $(PROJECT).o
