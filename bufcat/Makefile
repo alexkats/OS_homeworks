@@ -6,6 +6,7 @@ PROJECT=bufcat
 
 all: $(PROJECT)
 #	install_name_tool -change libhelpers.so ../lib/libhelpers.so ./bufcat
+#	install_name_tool -change libbufio.so ../lib/libbufio.so ./bufcat
 	rm -f $(PROJECT).o
 
 libs:
@@ -20,4 +21,5 @@ $(PROJECT): $(PROJECT).o libs
 clean:
 	rm -f $(PROJECT).o
 	rm -f $(PROJECT)
+	rm -f $(PROJECT)2.c
 	$(MAKE) -C ../lib clean
