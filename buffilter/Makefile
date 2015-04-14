@@ -5,8 +5,8 @@ LIBS=../lib/libhelpers.so -lhelpers ../lib/libbufio.so -lbufio
 PROJECT=buffilter
 
 all: $(PROJECT)
-	install_name_tool -change libhelpers.so ../lib/libhelpers.so ./buffilter
-	install_name_tool -change libbufio.so ../lib/libbufio.so ./buffilter
+#	install_name_tool -change libhelpers.so ../lib/libhelpers.so ./buffilter
+#	install_name_tool -change libbufio.so ../lib/libbufio.so ./buffilter
 	rm -f $(PROJECT).o
 
 libs:
@@ -21,4 +21,5 @@ $(PROJECT): $(PROJECT).o libs
 clean:
 	rm -f $(PROJECT).o
 	rm -f $(PROJECT)
+	rm -f /tmp/filter.tar
 	$(MAKE) -C ../lib clean

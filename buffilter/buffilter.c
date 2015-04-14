@@ -4,12 +4,6 @@ const size_t size = 4096;
 
 int main(int argc, char* argv[])
 {
-    buf_t *buf = buf_new(size);
-    buf_fill(STDIN_FILENO, buf, 1);
-    char word[3] = "bb\n";
-    int a = buf_write(STDOUT_FILENO, buf, word, 3);
-    fprintf(stdout, "%d\n", a);
-    /*
     if (argc < 2)
     {
         fprintf(stderr, "Usage: filter <executable file> <arguments>\n");
@@ -39,9 +33,12 @@ int main(int argc, char* argv[])
         if (rhave == -1)
         {
             fprintf(stderr, "%s\n", strerror(errno));
+            buf_free(buf);
+            buf_free(other);
             return 1;
         }
 
+        last_arg[rhave] = 0;
         int code = spawn(argv[0], argv);
 
         if (code == 0)
@@ -53,17 +50,23 @@ int main(int argc, char* argv[])
             if (whave == -1)
             {
                 fprintf(stderr, "%s\n", strerror(errno));
+                buf_free(buf);
+                buf_free(other);
                 return 1;
             }
 
             if (whave < length)
             {
                 fprintf(stderr, "Cannot output whole argument\n");
+                buf_free(buf);
+                buf_free(other);
                 return 1;
             }
         }
     }
-    */
+
+    buf_free(buf);
+    buf_free(other);
 
     return 0;
 }
