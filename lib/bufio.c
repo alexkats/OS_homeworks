@@ -103,3 +103,53 @@ ssize_t buf_flush(fd_t fd, buf_t *buf, size_t required)
             return res;
     }
 }
+
+ssize_t buf_getline(fd_t fd, buf_t *buf, char* dest)
+{
+    CHECK(buf != NULL);
+    ssize_t rhave = 0;
+    ssize_t ans = 0;
+    ssize_t have = 0;
+
+    while (1)
+    {
+        for (int i = 0; i < buf -> size; i++)
+            if ((buf -> buffer)[i] == '\n')
+            {
+                memmove(dest, buf -> buffer, i);
+                memmove(buf -> buffer, buf -> buffer + i + 1, buf -> size - i - 1);
+                buf -> size -= (i + 1);
+                return (have + i - rhave + 1);
+            }
+
+        if (buf -> size != 0)
+        {
+            memmove(dest, buf -> buffer, buf -> size);
+            memmove(buf -> buffer, buf -> buffer + buf -> size + 1, buf -> size - buf -> size - 1);
+            dest = dest + buf -> size;
+            buf -> size = 0;
+        }
+
+        ans += buf -> size;
+        rhave = buf_fill(fd, buf, 1);
+
+        if (rhave == 0)
+            break;
+
+        have += rhave;
+    }
+
+    return ans;
+}
+
+ssize_t buf_write(fd_t fd, buf_t *buf, char* src, size_t len)
+{
+    CHECK(buf != NULL);
+
+    int res = buf_flush(fd, buf, buf -> size);
+    memmove(buf -> buffer, src, len);
+    buf -> size += len;
+    res += buf_flush(fd, buf, buf -> size);
+
+    return res;
+}
