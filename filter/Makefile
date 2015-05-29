@@ -1,24 +1,12 @@
-CC=gcc
-CFLAGS=-Wall -I../lib -std=c99
-LDFLAGS=-L../lib
-LIBS=../lib/libhelpers.so -lhelpers
-PROJECT=filter
-
-all: $(PROJECT)
-#	install_name_tool -change libhelpers.so ../lib/libhelpers.so ./filter
-	rm -f $(PROJECT).o
-
-libhelpers.so:
+all: filter
+	
+libs:
 	$(MAKE) -C ../lib
 
-$(PROJECT).o:
-	$(CC) -o $@ -c $(CFLAGS) $(PROJECT).c
-
-$(PROJECT): $(PROJECT).o libhelpers.so
-	$(CC) -o $@ $(LDFLAGS) $< $(LIBS)
+filter: libs
+	gcc -Wall -std=c99 -o filter filter.c -I../lib -Wl,-rpath=../lib -L../lib -lhelpers
 
 clean:
-	rm -f $(PROJECT).o
-	rm -f $(PROJECT)
-	rm -f /tmp/filter.tar
+	rm -f filter.o
+	rm -f filter
 	$(MAKE) -C ../lib clean

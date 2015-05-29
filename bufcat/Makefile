@@ -1,25 +1,13 @@
-CC=gcc
-CFLAGS=-Wall -I../lib -std=c99
-LDFLAGS=-L../lib
-LIBS=../lib/libhelpers.so -lhelpers ../lib/libbufio.so -lbufio
-PROJECT=bufcat
-
-all: $(PROJECT)
-#	install_name_tool -change libhelpers.so ../lib/libhelpers.so ./bufcat
-#	install_name_tool -change libbufio.so ../lib/libbufio.so ./bufcat
-	rm -f $(PROJECT).o
-
+all: bufcat
+	
 libs:
 	$(MAKE) -C ../lib
 
-$(PROJECT).o:
-	$(CC) -o $@ -c $(CFLAGS) $(PROJECT).c
-
-$(PROJECT): $(PROJECT).o libs
-	$(CC) -o $@ $(LDFLAGS) $< $(LIBS)
+bufcat: libs
+	gcc -Wall -std=c99 -o bufcat bufcat.c -I../lib -Wl,-rpath=../lib -L../lib -lhelpers
 
 clean:
-	rm -f $(PROJECT).o
-	rm -f $(PROJECT)
-	rm -f $(PROJECT)2.c
+	rm -f bufcat.o
+	rm -f bufcat
+	rm -f bufcat2.c
 	$(MAKE) -C ../lib clean

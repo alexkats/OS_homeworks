@@ -1,5 +1,6 @@
 #ifndef _H_HELPERS_
 #define _H_HELPERS_
+#define _POSIX_SOURCE
 
 #include <unistd.h>
 #include <errno.h>

@@ -205,7 +205,7 @@ void exec_free(struct execargs_t* exec)
 int exec(execargs_t* args)
 {
     int process_id = new_spawn(args -> program, args -> args);
-    if (process_id != 0)
+    if (process_id < 0)
     {
         fprintf(stderr, "%s\n", strerror(errno));
         return -1;

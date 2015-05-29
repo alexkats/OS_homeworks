@@ -4,7 +4,7 @@
 const size_t size = 4096;
 const size_t count = 100;
 
-execargs_t* programs[count];
+execargs_t* programs[100];
 int all;
 
 void init(char* command, int len)
@@ -39,24 +39,28 @@ void init(char* command, int len)
 
             while (command[i++] == ' ') {}
 
-            i--;
+            i -= 2;
         }
         else if (command[i] == '|')
         {
             if (!found_program)
                 program[curr] = '\0';
 
-            args[argc++][curr] = '\0';
+            args[argc][curr] = '\0';
             curr = 0;
             i++;
 
             while (command[i++] == ' ') {}
 
-            i--;
+            i -= 2;
             found_program = 0;
+            programs[all++] = exec_new(program, args, argc);
+
+            fprintf(stdout, "%s\n%d\n", program, argc);
+
+            for (int j = 0; j < argc; j++)
+                fprintf(stdout, "%s\n", args[j]);
             argc = 0;
-            struct execargs_t* tmp = exec_new(program, args, argc);
-            programs[all++] = tmp;
         }
         else
         {
@@ -67,12 +71,20 @@ void init(char* command, int len)
         }
     }
 
-    struct execargs_t* tmp = exec_new(program, args, argc);
-    programs[all++] = tmp;
+    programs[all++] = exec_new(program, args, argc);
+    fprintf(stdout, "%s\n%d\n", program, argc);
+
+    for (int i = 0; i < argc; i++)
+        fprintf(stdout, "%s\n", args[i]);
+}
+
+void action(int num)
+{
 }
 
 int main()
 {
+    signal(SIGINT, action);
     buf_t *buf = buf_new(size);
 
     if (buf == NULL)
@@ -104,7 +116,10 @@ int main()
             return -1;
         }
 
+        command[rhave - 1] = '\n';
+        command[rhave++] = '\0';
         init(command, rhave);
+        fprintf(stdout, "%s\n", command);
 
         if (runpiped(programs, all) < 0)
         {

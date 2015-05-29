@@ -1,23 +1,12 @@
-CC=gcc
-CFLAGS=-Wall -I../lib -std=c99
-LDFLAGS=-L../lib
-LIBS=../lib/libhelpers.so -lhelpers
-PROJECT=revwords
-
-all: $(PROJECT)
-#	install_name_tool -change libhelpers.so ../lib/libhelpers.so ./revwords
-	rm -f $(PROJECT).o
-
-libhelpers.so:
+all: revwords
+	
+libs:
 	$(MAKE) -C ../lib
 
-$(PROJECT).o:
-	$(CC) -o $@ -c $(CFLAGS) $(PROJECT).c
-
-$(PROJECT): $(PROJECT).o libhelpers.so
-	$(CC) -o $@ $(LDFLAGS) $< $(LIBS)
+revwords: libs
+	gcc -Wall -std=c99 -o revwords revwords.c -I../lib -Wl,-rpath=../lib -L../lib -lhelpers
 
 clean:
-	rm -f $(PROJECT).o
-	rm -f $(PROJECT)
+	rm -f revwords.o
+	rm -f revwords
 	$(MAKE) -C ../lib clean
