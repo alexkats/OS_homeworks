@@ -6,13 +6,6 @@
     #define CHECK(condition)
 #endif
 
-struct buf_t
-{
-    char* buffer;
-    size_t capacity;
-    size_t size;
-};
-
 struct buf_t *buf_new(size_t capacity)
 {
     char* tmp = (char*) malloc(capacity);

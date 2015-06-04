@@ -4,7 +4,7 @@ libs:
 	$(MAKE) -C ../lib
 
 bufcat: libs
-	gcc -Wall -std=c99 -o bufcat bufcat.c -I../lib -Wl,-rpath=../lib -L../lib -lhelpers
+	gcc -Wall -std=c99 -o bufcat bufcat.c -I../lib -Wl,-rpath=../lib -L../lib -lbufio
 
 clean:
 	rm -f bufcat.o

@@ -7,8 +7,13 @@
 #include <errno.h>
 #include <stdio.h>
 
-struct buf_t;
-typedef struct buf_t buf_t;
+typedef struct buf_t
+{
+    char* buffer;
+    size_t capacity;
+    size_t size;
+} buf_t;
+
 typedef int fd_t;
 
 struct buf_t *buf_new(size_t capacity);
