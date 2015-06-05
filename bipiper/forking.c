@@ -135,11 +135,13 @@ int main(int argc, char** argv)
             return -1;
         }
 
+        int skip = 0;
+
         if (process_id != 0)
         {
             close(acc_fd1);
             close(acc_fd2);
-            continue;
+            skip = 1;
         }
 
         buf_t* buf = buf_new(size);
@@ -156,6 +158,9 @@ int main(int argc, char** argv)
 
         while (1)
         {
+            if (skip)
+                break;
+            
             ssize_t rhave = buf_fill(acc_fd1, buf, 1);
 
             if (rhave == -1)

@@ -5,6 +5,7 @@ all:
 	$(MAKE) -C bufcat
 	$(MAKE) -C simplesh
 	$(MAKE) -C filesender
+	$(MAKE) -C bipiper
 
 clean:
 	$(MAKE) -C cat clean
@@ -13,3 +14,4 @@ clean:
 	$(MAKE) -C bufcat clean
 	$(MAKE) -C simplesh clean
 	$(MAKE) -C filesender clean
+	$(MAKE) -C bipiper clean
