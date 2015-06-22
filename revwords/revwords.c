@@ -42,10 +42,7 @@ int main()
             if (buf[i] == delimeter)
             {
                 reverse(word, length);
-                
-                if (length != 0)
-                    word[length++] = ' ';
-
+                word[length++] = ' ';
                 whave = write_(STDOUT_FILENO, word, length);
 
                 if (whave == -1)
