@@ -1,3 +1,5 @@
+#define _POSIX_SOURCE
+
 #include <bufio.h>
 #include <helpers.h>
 
@@ -55,11 +57,6 @@ void init(char* command, int len)
             i -= 2;
             found_program = 0;
             programs[all++] = exec_new(program, args, argc);
-
-            fprintf(stdout, "%s\n%d\n", program, argc);
-
-            for (int j = 0; j < argc; j++)
-                fprintf(stdout, "%s\n", args[j]);
             argc = 0;
         }
         else
@@ -72,10 +69,6 @@ void init(char* command, int len)
     }
 
     programs[all++] = exec_new(program, args, argc);
-    fprintf(stdout, "%s\n%d\n", program, argc);
-
-    for (int i = 0; i < argc; i++)
-        fprintf(stdout, "%s\n", args[i]);
 }
 
 void action(int num)
@@ -84,12 +77,14 @@ void action(int num)
 
 int main()
 {
-    signal(SIGINT, action);
+    struct sigaction act;
+    act.sa_handler = &action;
+    sigaction(SIGINT, &act, NULL);
     buf_t *buf = buf_new(size);
 
     if (buf == NULL)
     {
-        fprintf(stderr, "Error in allocating memory");
+        fprintf(stderr, "Error in allocating memory\n");
         return -1;
     }
 
@@ -101,7 +96,7 @@ int main()
 
         if (write(STDOUT_FILENO, "$", 1) == -1)
         {
-            fprintf(stderr, "Error in output");
+            fprintf(stderr, "Error in output\n");
             return -1;
         }
 
@@ -112,18 +107,23 @@ int main()
 
         if (rhave == -1)
         {
-            fprintf(stderr, "Error in input");
-            return -1;
+            if (write(STDOUT_FILENO, "\n$", 1) == -1)
+            {
+                fprintf(stderr, "Error in output\n");
+                return -1;
+            }
+
+            continue;
         }
 
-        command[rhave - 1] = '\n';
-        command[rhave++] = '\0';
+        if (rhave == 1)
+            continue;
+
         init(command, rhave);
-        fprintf(stdout, "%s\n", command);
 
         if (runpiped(programs, all) < 0)
         {
-            fprintf(stderr, "Error in pipe");
+            fprintf(stderr, "Error in pipe\n");
             return -1;
         }
     }

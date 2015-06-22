@@ -221,6 +221,8 @@ void action(int sig)
 {
     for (int i = 0; i < pids_count; i++)
         kill(pids_global[i], SIGKILL);
+
+    pids_count = 0;
 }
 
 int runpiped(execargs_t** programs, size_t n)
@@ -233,7 +235,7 @@ int runpiped(execargs_t** programs, size_t n)
 
     for (int i = 0; i < n - 1; i++)
     {
-        int res = pipe(pipes[i]);
+        int res = pipe2(pipes[i], O_CLOEXEC);
 
         if (res == -1)
         {
@@ -244,16 +246,29 @@ int runpiped(execargs_t** programs, size_t n)
 
     for (int i = 0; i < n; i++)
     {
+        pids[i] = fork();
+
+        if (pids[i] == -1)
+            return -1;
+
+        if (pids[i] != 0)
+            continue;
+
         if (i > 0)
             dup2(pipes[i - 1][0], STDIN_FILENO);
 
         if (i < n - 1)
             dup2(pipes[i][1], STDOUT_FILENO);
 
-        pids[i] = exec(programs[i]);
+        int res = execvp(programs[i] -> program, programs[i] -> args);
 
-        if (pids[i] == -1)
-            return -1;
+        if (res == -1)
+        {
+            fprintf(stderr, "%s\n", strerror(errno));
+            _exit(-1);
+        }
+
+        _exit(0);
     }
 
     for (int i = 0; i < n - 1; i++)
@@ -264,11 +279,15 @@ int runpiped(execargs_t** programs, size_t n)
 
     pids_global = (int*) pids;
     pids_count = n;
-    signal(SIGINT, action);
+    struct sigaction act;
+    act.sa_handler = &action;
+    sigaction(SIGINT, &act, NULL);
     int status;
 
     for (int i = 0; i < n; i++)
         waitpid(pids[i], &status, 0);
+
+    pids_count = 0;
 
     return 0;
 }

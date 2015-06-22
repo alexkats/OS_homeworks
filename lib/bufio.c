@@ -109,7 +109,7 @@ ssize_t buf_getline(fd_t fd, buf_t *buf, char* dest)
         for (int i = 0; i < buf -> size; i++)
             if ((buf -> buffer)[i] == '\n')
             {
-                memmove(dest, buf -> buffer, i);
+                memmove(dest, buf -> buffer, i + 1);
                 memmove(buf -> buffer, buf -> buffer + i + 1, buf -> size - i - 1);
                 buf -> size -= (i + 1);
                 return (have + i - rhave + 1);
@@ -128,6 +128,9 @@ ssize_t buf_getline(fd_t fd, buf_t *buf, char* dest)
 
         if (rhave == 0)
             break;
+
+        if (rhave == -1)
+            return -1;
 
         have += rhave;
     }
