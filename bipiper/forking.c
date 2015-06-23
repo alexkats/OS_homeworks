@@ -13,7 +13,7 @@
 #include <sys/wait.h>
 
 typedef struct addrinfo addrinfo;
-typedef struct sockaddr_storage sock_stor;
+typedef struct sockaddr_in sock_in;
 
 const size_t size = 4096;
 
@@ -73,17 +73,11 @@ int get_socket_fd(const char* port)
     return fd;
 }
 
-void action(int num)
-{
-    if (num == SIGCHLD)
-        wait(NULL);
-}
-
 int main(int argc, char** argv)
 {
     struct sigaction sa;
     memset(&sa, 0, sizeof(sa));
-    sa.sa_handler = action;
+    sa.sa_handler = SIG_IGN;
     sigaction(SIGCHLD, &sa, NULL);
 
     if (argc != 3)
@@ -100,10 +94,19 @@ int main(int argc, char** argv)
     if ((fd2 = get_socket_fd(argv[2])) == -1)
         return -1;
 
-    sock_stor receiver1;
-    sock_stor receiver2;
+    sock_in receiver1;
+    sock_in receiver2;
     socklen_t len1 = sizeof(receiver1);
     socklen_t len2 = sizeof(receiver2);
+    buf_t* buf = buf_new(size);
+
+    if (buf == NULL)
+    {
+        fprintf(stderr, "Couldn'y allocate memory for buffer\n");
+        close(fd1);
+        close(fd2);
+        return -1;
+    }
 
     while (1)
     {
@@ -135,66 +138,38 @@ int main(int argc, char** argv)
             return -1;
         }
 
-        int skip = 0;
-
-        if (process_id != 0)
+        if (process_id == 0)
         {
-            close(acc_fd1);
-            close(acc_fd2);
-            skip = 1;
-        }
+            while (1)
+            {
+                ssize_t rhave = buf_fill(acc_fd1, buf, 1);
 
-        buf_t* buf = buf_new(size);
+                if (rhave == -1)
+                {
+                    fprintf(stderr, "Error in reading\n");
+                    buf_free(buf);
+                    close(fd1);
+                    close(fd2);
+                    close(acc_fd1);
+                    close(acc_fd2);
+                    _exit(-1);
+                }
 
-        if (buf == NULL)
-        {
-            fprintf(stderr, "Couldn't allocate memory for buffer\n");
-            close(fd1);
-            close(fd2);
-            close(acc_fd1);
-            close(acc_fd2);
-            return -1;
-        }
-
-        while (1)
-        {
-            if (skip)
-                break;
+                if (rhave == 0)
+                   _exit(0);
             
-            ssize_t rhave = buf_fill(acc_fd1, buf, 1);
+                ssize_t whave = buf_flush(acc_fd2, buf, buf -> size);
 
-            if (rhave == -1)
-            {
-                fprintf(stderr, "Error in reading\n");
-                buf_free(buf);
-                close(fd1);
-                close(fd2);
-                close(acc_fd1);
-                close(acc_fd2);
-                return -1;
-            }
-
-            if (rhave == 0)
-            {
-                buf_free(buf);
-                close(fd1);
-                close(fd2);
-                close(acc_fd1);
-                close(acc_fd2);
-                _exit(0);
-            }
-
-            ssize_t whave = buf_flush(acc_fd2, buf, buf -> size);
-
-            if (whave == -1)
-            {
-                fprintf(stderr, "Error in writing\n");
-                buf_free(buf);
-                close(fd1);
-                close(fd2);
-                close(acc_fd1);
-                close(acc_fd2);
-                return -1;
+                if (whave == -1)
+                {
+                    fprintf(stderr, "Error in writing\n");
+                    buf_free(buf);
+                    close(fd1);
+                    close(fd2);
+                    close(acc_fd1);
+                    close(acc_fd2);
+                    _exit(-1);
+                }
             }
         }
 
@@ -229,18 +204,11 @@ int main(int argc, char** argv)
                 close(fd2);
                 close(acc_fd1);
                 close(acc_fd2);
-                return -1;
+                _exit(-1);
             }
 
             if (rhave == 0)
-            {
-                buf_free(buf);
-                close(fd1);
-                close(fd2);
-                close(acc_fd1);
-                close(acc_fd2);
                 _exit(0);
-            }
 
             ssize_t whave = buf_flush(acc_fd1, buf, buf -> size);
 
@@ -252,10 +220,12 @@ int main(int argc, char** argv)
                 close(fd2);
                 close(acc_fd1);
                 close(acc_fd2);
-                return -1;
+                _exit(-1);
             }
         }
     }
+
+    buf_free(buf);
 
     return 0;
 }
