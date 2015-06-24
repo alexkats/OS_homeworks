@@ -39,6 +39,9 @@ void init(char* command, int len)
 
         if (command[i] == ' ' || command[i] == '\n')
         {
+            if (curr == 0)
+                break;
+
             if (!found_program)
             {
                 program[curr] = '\0';
