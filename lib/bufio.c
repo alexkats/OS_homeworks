@@ -54,7 +54,7 @@ ssize_t buf_fill(fd_t fd, buf_t *buf, size_t required)
     if (buf -> size >= required)
         return buf -> size;
 
-    int have = 0;
+    ssize_t have = 0;
 
     while (1)
     {
@@ -107,7 +107,7 @@ ssize_t buf_getline(fd_t fd, buf_t *buf, char* dest)
     while (1)
     {
         for (int i = 0; i < buf -> size; i++)
-            if ((buf -> buffer)[i] == '\n')
+            if ((buf -> buffer)[i] == '\n' || (buf -> buffer)[i] == '\0')
             {
                 memmove(dest, buf -> buffer, i + 1);
                 memmove(buf -> buffer, buf -> buffer + i + 1, buf -> size - i - 1);
@@ -118,7 +118,7 @@ ssize_t buf_getline(fd_t fd, buf_t *buf, char* dest)
         if (buf -> size != 0)
         {
             memmove(dest, buf -> buffer, buf -> size);
-            memmove(buf -> buffer, buf -> buffer + buf -> size + 1, buf -> size - buf -> size - 1);
+            memmove(buf -> buffer, buf -> buffer + buf -> size + 1, buf -> capacity - buf -> size - 1);
             dest = dest + buf -> size;
             buf -> size = 0;
         }

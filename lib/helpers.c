@@ -281,7 +281,10 @@ int runpiped(execargs_t** programs, size_t n)
     pids_count = n;
     struct sigaction act;
     act.sa_handler = &action;
-    sigaction(SIGINT, &act, NULL);
+
+    if (sigaction(SIGINT, &act, NULL) < 0)
+        return -1;
+
     int status;
 
     for (int i = 0; i < n; i++)

@@ -25,9 +25,19 @@ void init(char* command, int len)
 
     while (command[from++] == ' ') {}
 
+    if (from == len)
+        return;
+
     for (int i = from - 1; i < len; i++)
     {
-        if (command[i] == ' ' || command[i] == '\n' || command[i] == '\0')
+        if (command[i] == '\0')
+        {
+            all = 0;
+            argc = 0;
+            return;
+        }
+
+        if (command[i] == ' ' || command[i] == '\n')
         {
             if (!found_program)
             {
@@ -79,7 +89,10 @@ int main()
 {
     struct sigaction act;
     act.sa_handler = &action;
-    sigaction(SIGINT, &act, NULL);
+
+    if (sigaction(SIGINT, &act, NULL) < 0)
+        return 1;
+
     buf_t *buf = buf_new(size);
 
     if (buf == NULL)
@@ -115,9 +128,6 @@ int main()
 
             continue;
         }
-
-        if (rhave == 1)
-            continue;
 
         init(command, rhave);
 
