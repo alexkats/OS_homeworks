@@ -131,12 +131,6 @@ int get_socket_fd(const char* port) {
     }
 
     freeaddrinfo(res);
-
-    if (listen(fd, -1) == -1) {
-        prerr();
-        return -1;
-    }
-
     return fd;
 }
 
@@ -201,6 +195,23 @@ int become_daemon(const char* pid_file, const char* log_file) {
     return log_fd;
 }
 
+int make_non_blocking(int sock_fd) {
+    int flags = fcntl(sock_fd, F_GETFL, 0);
+
+    if (flags == -1) {
+        prerr();
+        return -1;
+    }
+
+    flags |= O_NONBLOCK;
+    if (fcntl(sock_fd, F_SETFL, flags) == -1) {
+        prerr();
+        return -1;
+    }
+
+    return 0;
+}
+
 int main(int argc, char** argv) {
     if (argc != 2 || argv[1] == NULL) {
         custom_prerr("Usage: ./netsh <port>");
@@ -219,6 +230,32 @@ int main(int argc, char** argv) {
 
     if (sock_fd == -1) {
         unlink(pid_file);
+        close(log_fd);
+        return -1;
+    }
+
+    if (make_non_blocking(sock_fd) == -1) {
+        unlink(pid_file);
+        close(log_fd);
+        close(sock_fd);
+        return -1;
+    }
+
+    if (listen(sock_fd, -1) == -1) {
+        prerr();
+        unlink(pid_file);
+        close(log_fd);
+        close(sock_fd);
+        return -1;
+    }
+
+    int epoll_fd = epoll_create1(0);
+
+    if (epoll_fd == -1) {
+        prerr();
+        unlink(pid_file);
+        close(log_fd);
+        close(sock_fd);
         return -1;
     }
 
