@@ -10,4 +10,6 @@ netsh: libs
 clean:
 	rm -f netsh.o
 	rm -f netsh
+	rm -f log
+	rm -f /tmp/netsh.log
 	$(MAKE) -C ../cpplib clean

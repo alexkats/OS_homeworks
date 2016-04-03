@@ -5,6 +5,7 @@
 #include <bufio.h>
 #include <unistd.h>
 #include <netdb.h>
+#include <syslog.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/stat.h>
@@ -139,21 +140,7 @@ int get_socket_fd(const char* port) {
     return fd;
 }
 
-int main(int argc, char** argv) {
-    if (argc != 2 || argv[1] == NULL) {
-        custom_prerr("Usage: ./netsh <port>");
-        return -1;
-    }
-
-    const char* pid_file = "/home/alex/OS_homeworks/netsh/pid";
-
-    int pid_fd = open(pid_file, O_RDWR|O_CREAT);
-
-    if (pid_fd < 0) {
-        prerr();
-        return -1;
-    }
-
+int become_daemon(const char* pid_file, const char* log_file) {
     pid_t pid = fork();
 
     switch (pid) {
@@ -161,8 +148,6 @@ int main(int argc, char** argv) {
             break;
         case -1:
             prerr();
-            close(pid_fd);
-            unlink(pid_file);
             return -1;
         default:
             exit(0);
@@ -180,16 +165,56 @@ int main(int argc, char** argv) {
             break;
         case -1:
             prerr();
-            close(pid_fd);
-            unlink(pid_file);
             return -1;
         default:
             exit(0);
             break;
     }
+    
+    int pid_fd = open(pid_file, O_RDWR|O_CREAT|O_EXCL, 0644);
+    
+    if (access(log_file, F_OK) == 0) {
+        unlink(log_file);
+    }
+
+    int log_fd = open(log_file, O_RDWR|O_CREAT|O_EXCL, 0644);
+
+    for (int i = sysconf(_SC_OPEN_MAX); i >= 0; i--) {
+        if (i != pid_fd && i != log_fd) {
+            close(i);
+        }
+    }
+
+    int stdio_fd = open("/dev/null", O_RDWR);
+    dup(stdio_fd);
+    dup(stdio_fd);
+
+    if (pid_fd < 0 || log_fd < 0) {
+        prerr();
+        return -1;
+    }
 
     dprintf(pid_fd, "%d\n", getpid());
     close(pid_fd); 
+    dprintf(log_fd, "Just test");
+    setpgrp();
+    return log_fd;
+}
+
+int main(int argc, char** argv) {
+    if (argc != 2 || argv[1] == NULL) {
+        custom_prerr("Usage: ./netsh <port>");
+        return -1;
+    }
+
+    const char* pid_file = "/home/alex/OS_homeworks/netsh/pid";
+    const char* log_file = "/home/alex/OS_homeworks/netsh/log";
+    int log_fd;
+    
+    if ((log_fd = become_daemon(pid_file, log_file)) == -1) {
+        return -1;
+    }
+
     int sock_fd = get_socket_fd(argv[1]);
 
     if (sock_fd == -1) {
@@ -198,6 +223,8 @@ int main(int argc, char** argv) {
     }
 
     sleep(5);
+    close(sock_fd);
+    close(log_fd);
     unlink(pid_file);
 
     return 0;
