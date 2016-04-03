@@ -143,7 +143,7 @@ struct execargs_t
     int count;
 };
 
-struct execargs_t *exec_new(char* _program, char** _args, int _count)
+struct execargs_t *exec_new(char* _program, vector <char*> _args, int _count)
 {
     char* tmp = (char*) malloc(4096);
 
@@ -225,7 +225,7 @@ void action(int sig)
     pids_count = 0;
 }
 
-int runpiped(execargs_t** programs, size_t n)
+int runpiped(vector <execargs_t*> programs, size_t n)
 {
     if (n == 0)
         return 0;

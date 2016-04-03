@@ -62,13 +62,7 @@ void parse(char* command, int len) {
 
             i--;
             found_program = 0;
-            char* argv[(int) args.size()];
-
-            for (int j = 0; j < (int) args.size(); j++) {
-                argv[j] = args[j];
-            }
-
-            programs.push_back(exec_new(program, argv, (int) args.size()));
+            programs.push_back(exec_new(program, args, (int) args.size()));
             args.clear();
         } else {
             if (!found_program) {
@@ -79,22 +73,20 @@ void parse(char* command, int len) {
         }
     }
 
-    char* argv[(int) args.size()];
-
-    for (int j = 0; j < (int) args.size(); j++) {
-        argv[j] = args[j];
-    }
-
-    programs.push_back(exec_new(program, argv, (int) args.size()));
+    programs.push_back(exec_new(program, args, (int) args.size()));
 }
 
-void prerr(const char* s) {
+void prerr() {
+    fprintf(stderr, "%s\n", strerror(errno));
+}
+
+void custom_prerr(const char* s) {
     fprintf(stderr, "%s\n", s);
 }
 
 int main(int argc, char** argv) {
     if (argc != 2 || argv[1] == NULL) {
-        prerr("Usage: ./netsh <port>");
+        custom_prerr("Usage: ./netsh <port>");
         return -1;
     }
 
@@ -104,9 +96,7 @@ int main(int argc, char** argv) {
     int pid_fd = open("/home/alex/OS_homeworks/netsh/pid", O_RDWR|O_CREAT);
 
     if (pid_fd < 0) {
-        prerr("Open error");
-        fprintf(stderr, "%d\n", errno);
-        fprintf(stderr, "%d\n", ENOENT);
+        prerr();
         return -1;
     }
 
@@ -116,7 +106,7 @@ int main(int argc, char** argv) {
         case 0:
             break;
         case -1:
-            prerr("Fork error");
+            prerr();
             return -1;
         default:
             exit(0);
@@ -133,7 +123,7 @@ int main(int argc, char** argv) {
         case 0:
             break;
         case -1:
-            perror("Fork error");
+            prerr();
             return -1;
         default:
             exit(0);
@@ -142,6 +132,9 @@ int main(int argc, char** argv) {
 
     dprintf(pid_fd, "%d\n", getpid());
     close(pid_fd);
+
+
+
     sleep(5);
     // unlink("/tmp/netsh.pid");
     unlink("/home/alex/OS_homeworks/netsh/pid");
