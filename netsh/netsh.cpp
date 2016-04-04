@@ -21,6 +21,7 @@ using namespace std;
 typedef struct addrinfo addrinfo;
 typedef struct sockaddr_storage sock_stor;
 typedef struct sockaddr_in sock_in;
+typedef struct epoll_event epoll_event;
 
 vector <execargs_t*> programs;
 int log_fd;
@@ -281,7 +282,23 @@ int main(int argc, char** argv) {
         return -1;
     }
 
+    epoll_event event;
+    epoll_event* events;
+
+    event.data.fd = sock_fd;
+    event.events = EPOLLIN|EPOLLET;
+
+    if (epoll_ctl(epoll_fd, EPOLL_CTL_ADD, sock_fd, &event) == -1) {
+        dprerr();
+        unlink(pid_file);
+        close(log_fd);
+        close(sock_fd);
+        close(epoll_fd);
+        return -1;
+    }
+
     sleep(5);
+    close(epoll_fd);
     close(sock_fd);
     close(log_fd);
     unlink(pid_file);
