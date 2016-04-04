@@ -244,6 +244,9 @@ int runpiped(vector <execargs_t*> programs, size_t n, int in_fd, int out_fd, int
         }
     }
 
+    dup2(in_fd, STDIN_FILENO);
+    dup2(out_fd, STDOUT_FILENO);
+
     for (int i = 0; i < (int) n; i++)
     {
         pids[i] = fork();

@@ -221,11 +221,15 @@ int become_daemon(const char* pid_file, const char* log_file) {
         return -1;
     }
 
-    for (int i = sysconf(_SC_OPEN_MAX); i >= 3; i--) {
+    for (int i = sysconf(_SC_OPEN_MAX); i >= 0; i--) {
         if (i != pid_fd && i != log_fd) {
             close(i);
         }
     }
+
+    int stdio_fd = open("/dev/null", O_RDWR);
+    dup(stdio_fd);
+    dup(stdio_fd);
 
     dprintf(pid_fd, "%d\n", getpid());
     close(pid_fd); 
@@ -391,12 +395,7 @@ int main(int argc, char** argv) {
             rhave = buf_getline(events[i].data.fd, buf, command);
 
             if (rhave == -1) {
-                custom_dprerr("Couldn't read command");
-                unlink(pid_file);
-                close(log_fd);
-                close(sock_fd);
-                close(epoll_fd);
-                return -1;
+                continue;
             }
 
             parse(command, rhave);
