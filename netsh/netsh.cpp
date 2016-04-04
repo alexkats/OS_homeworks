@@ -378,15 +378,13 @@ int main(int argc, char** argv) {
             rhave = buf_getline(events[i].data.fd, buf, command);
 
             if (rhave == -1) {
-                /*
                 custom_dprerr("Couldn't read command");
                 unlink(pid_file);
                 close(log_fd);
                 close(sock_fd);
                 close(epoll_fd);
                 return -1;
-                */
-                continue;
+                //continue;
             }
 
             parse(command, rhave);
