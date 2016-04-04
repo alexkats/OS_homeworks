@@ -19,9 +19,12 @@
 using namespace std;
 
 typedef struct addrinfo addrinfo;
+typedef struct sockaddr sockaddr;
 typedef struct sockaddr_storage sock_stor;
 typedef struct sockaddr_in sock_in;
 typedef struct epoll_event epoll_event;
+
+const int MAXEVENTS = 64;
 
 vector <execargs_t*> programs;
 int log_fd;
@@ -295,6 +298,36 @@ int main(int argc, char** argv) {
         close(sock_fd);
         close(epoll_fd);
         return -1;
+    }
+
+    events = (epoll_event*) calloc(MAXEVENTS, sizeof event);
+
+    while (1) {
+        int n = epoll_wait(epoll_fd, events, MAXEVENTS, -1);
+
+        for (int i = 0; i < n; i++) {
+            if ((events[i].events & EPOLLERR) || (events[i].events & EPOLLHUP) || (!(events[i].events & EPOLLIN))) {
+                custom_dprerr("Epoll error");
+                close(events[i].data.fd);
+                continue;
+            }
+
+            if (sock_fd == events[i].data.fd) {
+                while (1) {
+                    sockaddr in_addr;
+                    socklen_t in_len = sizeof in_addr;
+                    int in_fd = accept(sock_fd, &in_addr, &in_len);
+
+                    if (in_fd == -1) {
+                        if (errno == EAGAIN || errno == EWOULDBLOCK) {
+                            break;
+                        }
+
+                        dprerr();
+                        break;
+                    }
+
+
     }
 
     sleep(5);
