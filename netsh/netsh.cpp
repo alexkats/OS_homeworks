@@ -23,6 +23,7 @@ typedef struct sockaddr_storage sock_stor;
 typedef struct sockaddr_in sock_in;
 
 vector <execargs_t*> programs;
+int log_fd;
 
 void parse(char* command, int len) {
     vector <char*> args;
@@ -90,6 +91,14 @@ void custom_prerr(const char* s) {
     fprintf(stderr, "%s\n", s);
 }
 
+void dprerr() {
+    dprintf(log_fd, "%s\n", strerror(errno));
+}
+
+void custom_dprerr(const char* s) {
+    dprintf(log_fd, "%s\n", s);
+}
+
 int get_socket_fd(const char* port) {
     addrinfo hints;
     memset(&hints, 0, sizeof(addrinfo));
@@ -101,13 +110,13 @@ int get_socket_fd(const char* port) {
     int fd;
 
     if (getaddrinfo(NULL, port, &hints, &res) != 0) {
-        custom_prerr("Error occured in getaddrinfo");
+        custom_dprerr("Error occured in getaddrinfo");
         return -1;
     }
 
     for (addrinfo* it = res; ; it = it -> ai_next) {
         if (it == NULL) {
-            custom_prerr("Couldn't bind any address");
+            custom_dprerr("Couldn't bind any address");
             return -1;
         }
 
@@ -118,7 +127,7 @@ int get_socket_fd(const char* port) {
         }
 
         if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &one, sizeof(int)) == -1) {
-            prerr();
+            dprerr();
             return -1;
         }
 
@@ -131,6 +140,7 @@ int get_socket_fd(const char* port) {
     }
 
     freeaddrinfo(res);
+
     return fd;
 }
 
@@ -166,12 +176,24 @@ int become_daemon(const char* pid_file, const char* log_file) {
     }
     
     int pid_fd = open(pid_file, O_RDWR|O_CREAT|O_EXCL, 0644);
+
+    if (pid_fd == -1) {
+        unlink(pid_file);
+        return -1;
+    }
     
     if (access(log_file, F_OK) == 0) {
         unlink(log_file);
     }
 
     int log_fd = open(log_file, O_RDWR|O_CREAT|O_EXCL, 0644);
+
+    if (log_fd == -1) {
+        close(pid_fd);
+        unlink(pid_file);
+        prerr();
+        return -1;
+    }
 
     for (int i = sysconf(_SC_OPEN_MAX); i >= 0; i--) {
         if (i != pid_fd && i != log_fd) {
@@ -183,15 +205,16 @@ int become_daemon(const char* pid_file, const char* log_file) {
     dup(stdio_fd);
     dup(stdio_fd);
 
-    if (pid_fd < 0 || log_fd < 0) {
-        prerr();
+    dprintf(pid_fd, "%d\n", getpid());
+    close(pid_fd); 
+
+    if (setpgrp() == -1) {
+        unlink(pid_file);
+        dprerr();
+        close(log_fd);
         return -1;
     }
 
-    dprintf(pid_fd, "%d\n", getpid());
-    close(pid_fd); 
-    dprintf(log_fd, "Just test");
-    setpgrp();
     return log_fd;
 }
 
@@ -199,13 +222,13 @@ int make_non_blocking(int sock_fd) {
     int flags = fcntl(sock_fd, F_GETFL, 0);
 
     if (flags == -1) {
-        prerr();
+        dprerr();
         return -1;
     }
 
     flags |= O_NONBLOCK;
     if (fcntl(sock_fd, F_SETFL, flags) == -1) {
-        prerr();
+        dprerr();
         return -1;
     }
 
@@ -220,7 +243,6 @@ int main(int argc, char** argv) {
 
     const char* pid_file = "/home/alex/OS_homeworks/netsh/pid";
     const char* log_file = "/home/alex/OS_homeworks/netsh/log";
-    int log_fd;
     
     if ((log_fd = become_daemon(pid_file, log_file)) == -1) {
         return -1;
@@ -242,7 +264,7 @@ int main(int argc, char** argv) {
     }
 
     if (listen(sock_fd, -1) == -1) {
-        prerr();
+        dprerr();
         unlink(pid_file);
         close(log_fd);
         close(sock_fd);
@@ -252,7 +274,7 @@ int main(int argc, char** argv) {
     int epoll_fd = epoll_create1(0);
 
     if (epoll_fd == -1) {
-        prerr();
+        dprerr();
         unlink(pid_file);
         close(log_fd);
         close(sock_fd);
