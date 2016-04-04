@@ -15,6 +15,7 @@
 #include <errno.h>
 #include <sys/epoll.h>
 #include <vector>
+#include <string.h>
 
 using namespace std;
 
@@ -38,15 +39,18 @@ void parse(char* command, int len) {
     int i = -1;
     int curr = 0;
     char found_program = 0;
+    bool is_quote = 0;
+    args.clear();
     programs.clear();
 
     while (command[++i] == ' ') {}
 
     for (; i < len; i++) {
         if (command[i] == '\0') {
+            args.clear();
             programs.clear();
             return;
-        } else if (command[i] == ' ' || command[i] == '\n') {
+        } else if ((command[i] == ' ' && !is_quote) || command[i] == '\n') {
             if (curr == 0) {
                 break;
             }
@@ -57,7 +61,9 @@ void parse(char* command, int len) {
             }
 
             arg[curr] = '\0';
-            args.push_back(arg);
+            char* tmp = (char*) malloc(len);
+            strcpy(tmp, arg);
+            args.push_back(tmp);
             curr = 0;
 
             if (command[i] == '\n') {
@@ -72,17 +78,35 @@ void parse(char* command, int len) {
                 program[curr] = '\0';
             }
 
-            arg[curr] = '\0';
-            args.push_back(arg);
-            curr = 0;
+            if (curr != 0) {
+                arg[curr] = '\0';
+                char* tmp = (char*) malloc(len);
+                strcpy(tmp, arg);
+                args.push_back(tmp);
+                curr = 0;
+            }
 
             while (command[++i] == ' ') {}
 
             i--;
             found_program = 0;
+
+            dprintf(log_fd, "args.size = %d\n", (int) args.size());
+
+            for (int i = 0; i < (int) args.size(); i++) {
+                dprintf(log_fd, "args[%d] = %s\n", i, args[i]);
+            }
+
+            dprintf(log_fd, "program = %s\n", program);
+
             programs.push_back(exec_new(program, args, (int) args.size()));
             args.clear();
         } else {
+            if (command[i] == '\'' || command[i] == '\"') {
+                is_quote = !is_quote;
+                continue;
+            }
+
             if (!found_program) {
                 program[curr] = command[i];
             }
@@ -90,6 +114,14 @@ void parse(char* command, int len) {
             arg[curr++] = command[i];
         }
     }
+
+    dprintf(log_fd, "args.size = %d\n", (int) args.size());
+
+    for (int i = 0; i < (int) args.size(); i++) {
+        dprintf(log_fd, "args[%d] = %s\n", i, args[i]);
+    }
+
+    dprintf(log_fd, "program = %s\n", program);
 
     programs.push_back(exec_new(program, args, (int) args.size()));
 }
@@ -206,15 +238,15 @@ int become_daemon(const char* pid_file, const char* log_file) {
         return -1;
     }
 
-    for (int i = sysconf(_SC_OPEN_MAX); i >= 0; i--) {
+    for (int i = sysconf(_SC_OPEN_MAX); i >= 3; i--) {
         if (i != pid_fd && i != log_fd) {
             close(i);
         }
     }
 
-    int stdio_fd = open("/dev/null", O_RDWR);
-    dup(stdio_fd);
-    dup(stdio_fd);
+    //int stdio_fd = open("/dev/null", O_RDWR);
+    //dup(stdio_fd);
+    //dup(stdio_fd);
 
     dprintf(pid_fd, "%d\n", getpid());
     close(pid_fd); 
@@ -387,9 +419,10 @@ int main(int argc, char** argv) {
                 //continue;
             }
 
+            dprintf(log_fd, "rhave = %d\n", (int) rhave);
             parse(command, rhave);
 
-            if (runpiped(programs, (int) programs.size(), events[i].data.fd, events[i].data.fd, log_fd) < 0) {
+            if (runpiped(programs, programs.size(), events[i].data.fd, events[i].data.fd, log_fd) < 0) {
                 custom_dprerr("Error in pipe");
                 unlink(pid_file);
                 close(log_fd);

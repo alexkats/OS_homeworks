@@ -256,13 +256,17 @@ int runpiped(vector <execargs_t*> programs, size_t n, int in_fd, int out_fd, int
 
         if (i > 0)
             dup2(pipes[i - 1][0], STDIN_FILENO);
-        else
-            dup2(in_fd, STDIN_FILENO);
 
-        if (i < (int) n - 2)
+        if (i < (int) n - 1)
             dup2(pipes[i][1], STDOUT_FILENO);
-        else
-            dup2(out_fd, STDOUT_FILENO);
+
+        dprintf(log_fd, "Here\n");
+        dprintf(log_fd, "program = %s\n", programs[i] -> program);
+        dprintf(log_fd, "count = %d\n", (int) programs[i] -> count);
+        
+        for (int j = 0; j <= (int) programs[i] -> count; j++) {
+            dprintf(log_fd, "args[%d] = %s\n", j, programs[i] -> args[j]);
+        }
 
         int res = execvp(programs[i] -> program, programs[i] -> args);
 
