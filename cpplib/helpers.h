@@ -26,6 +26,6 @@ typedef struct execargs_t execargs_t;
 struct execargs_t *exec_new(char*, vector <char*>, int);
 void exec_free(execargs_t*);
 int exec(execargs_t *);
-int runpiped(vector <execargs_t*>, size_t);
+int runpiped(vector <execargs_t*>, size_t, int, int, int);
 
 #endif //_H_HELPERS

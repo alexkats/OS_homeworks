@@ -225,7 +225,7 @@ void action(int sig)
     pids_count = 0;
 }
 
-int runpiped(vector <execargs_t*> programs, size_t n)
+int runpiped(vector <execargs_t*> programs, size_t n, int in_fd, int out_fd, int log_fd)
 {
     if (n == 0)
         return 0;
@@ -239,7 +239,7 @@ int runpiped(vector <execargs_t*> programs, size_t n)
 
         if (res == -1)
         {
-            fprintf(stderr, "%s\n", strerror(errno));
+            dprintf(log_fd, "%s\n", strerror(errno));
             return -1;
         }
     }
@@ -256,15 +256,19 @@ int runpiped(vector <execargs_t*> programs, size_t n)
 
         if (i > 0)
             dup2(pipes[i - 1][0], STDIN_FILENO);
+        else
+            dup2(in_fd, STDIN_FILENO);
 
-        if (i < (int) n - 1)
+        if (i < (int) n - 2)
             dup2(pipes[i][1], STDOUT_FILENO);
+        else
+            dup2(out_fd, STDOUT_FILENO);
 
         int res = execvp(programs[i] -> program, programs[i] -> args);
 
         if (res == -1)
         {
-            fprintf(stderr, "%s\n", strerror(errno));
+            dprintf(log_fd, "%s\n", strerror(errno));
             _exit(-1);
         }
 

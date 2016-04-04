@@ -60,6 +60,10 @@ void parse(char* command, int len) {
             args.push_back(arg);
             curr = 0;
 
+            if (command[i] == '\n') {
+                break;
+            }
+
             while (command[++i] == ' ') {}
 
             i--;
@@ -341,7 +345,7 @@ int main(int argc, char** argv) {
                     char sbuf[NI_MAXSERV];
 
                     if (getnameinfo(&in_addr, in_len, hbuf, sizeof hbuf, sbuf, sizeof sbuf, NI_NUMERICHOST|NI_NUMERICSERV) == 0) {
-                        dprintf(log_fd, "Accepted connection on descriptor %d (host = %s, port = %s)", in_fd, hbuf, sbuf);
+                        dprintf(log_fd, "Accepted connection on descriptor %d (host = %s, port = %s)\n", in_fd, hbuf, sbuf);
                     }
 
                     if (make_non_blocking(in_fd) == -1) {
@@ -374,17 +378,20 @@ int main(int argc, char** argv) {
             rhave = buf_getline(events[i].data.fd, buf, command);
 
             if (rhave == -1) {
+                /*
                 custom_dprerr("Couldn't read command");
                 unlink(pid_file);
                 close(log_fd);
                 close(sock_fd);
                 close(epoll_fd);
                 return -1;
+                */
+                continue;
             }
 
             parse(command, rhave);
 
-            if (runpiped(programs, (int) programs.size()) < 0) {
+            if (runpiped(programs, (int) programs.size(), events[i].data.fd, events[i].data.fd, log_fd) < 0) {
                 custom_dprerr("Error in pipe");
                 unlink(pid_file);
                 close(log_fd);
