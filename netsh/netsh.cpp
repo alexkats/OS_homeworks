@@ -25,6 +25,8 @@ typedef struct sockaddr_in sock_in;
 typedef struct epoll_event epoll_event;
 
 const int MAXEVENTS = 64;
+const int SIZE = 65536;
+const int BUF_SIZE = 4096;
 
 vector <execargs_t*> programs;
 int log_fd;
@@ -36,6 +38,7 @@ void parse(char* command, int len) {
     int i = -1;
     int curr = 0;
     char found_program = 0;
+    programs.clear();
 
     while (command[++i] == ' ') {}
 
@@ -245,6 +248,13 @@ int main(int argc, char** argv) {
         return -1;
     }
 
+    buf_t* buf = buf_new(BUF_SIZE);
+
+    if (buf == NULL) {
+        custom_prerr("Error in allocating memory");
+        return -1;
+    }
+
     const char* pid_file = "/home/alex/OS_homeworks/netsh/pid";
     const char* log_file = "/home/alex/OS_homeworks/netsh/log";
     
@@ -327,11 +337,69 @@ int main(int argc, char** argv) {
                         break;
                     }
 
+                    char hbuf[NI_MAXHOST];
+                    char sbuf[NI_MAXSERV];
 
+                    if (getnameinfo(&in_addr, in_len, hbuf, sizeof hbuf, sbuf, sizeof sbuf, NI_NUMERICHOST|NI_NUMERICSERV) == 0) {
+                        dprintf(log_fd, "Accepted connection on descriptor %d (host = %s, port = %s)", in_fd, hbuf, sbuf);
+                    }
+
+                    if (make_non_blocking(in_fd) == -1) {
+                        unlink(pid_file);
+                        close(log_fd);
+                        close(sock_fd);
+                        close(epoll_fd);
+                        return -1;
+                    }
+
+                    event.data.fd = in_fd;
+                    event.events = EPOLLIN|EPOLLET;
+
+                    if (epoll_ctl(epoll_fd, EPOLL_CTL_ADD, in_fd, &event) == -1) {
+                        dprerr();
+                        unlink(pid_file);
+                        close(log_fd);
+                        close(sock_fd);
+                        close(epoll_fd);
+                        return -1;
+                    }
+                }
+
+                continue;
+            }
+
+            ssize_t rhave = 0;
+            char command[SIZE];
+
+            rhave = buf_getline(events[i].data.fd, buf, command);
+
+            if (rhave == -1) {
+                custom_dprerr("Couldn't read command");
+                unlink(pid_file);
+                close(log_fd);
+                close(sock_fd);
+                close(epoll_fd);
+                return -1;
+            }
+
+            parse(command, rhave);
+
+            if (runpiped(programs, (int) programs.size()) < 0) {
+                custom_dprerr("Error in pipe");
+                unlink(pid_file);
+                close(log_fd);
+                close(sock_fd);
+                close(epoll_fd);
+                return -1;
+            }
+
+            close(events[i].data.fd);
+        }
     }
 
-    sleep(5);
     close(epoll_fd);
+    free(events);
+    buf_free(buf);
     close(sock_fd);
     close(log_fd);
     unlink(pid_file);
