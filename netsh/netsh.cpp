@@ -90,15 +90,6 @@ void parse(char* command, int len) {
 
             i--;
             found_program = 0;
-
-            dprintf(log_fd, "args.size = %d\n", (int) args.size());
-
-            for (int i = 0; i < (int) args.size(); i++) {
-                dprintf(log_fd, "args[%d] = %s\n", i, args[i]);
-            }
-
-            dprintf(log_fd, "program = %s\n", program);
-
             programs.push_back(exec_new(program, args, (int) args.size()));
             args.clear();
         } else {
@@ -114,14 +105,6 @@ void parse(char* command, int len) {
             arg[curr++] = command[i];
         }
     }
-
-    dprintf(log_fd, "args.size = %d\n", (int) args.size());
-
-    for (int i = 0; i < (int) args.size(); i++) {
-        dprintf(log_fd, "args[%d] = %s\n", i, args[i]);
-    }
-
-    dprintf(log_fd, "program = %s\n", program);
 
     programs.push_back(exec_new(program, args, (int) args.size()));
 }
@@ -244,10 +227,6 @@ int become_daemon(const char* pid_file, const char* log_file) {
         }
     }
 
-    //int stdio_fd = open("/dev/null", O_RDWR);
-    //dup(stdio_fd);
-    //dup(stdio_fd);
-
     dprintf(pid_fd, "%d\n", getpid());
     close(pid_fd); 
 
@@ -291,8 +270,10 @@ int main(int argc, char** argv) {
         return -1;
     }
 
-    const char* pid_file = "/home/alex/OS_homeworks/netsh/pid";
-    const char* log_file = "/home/alex/OS_homeworks/netsh/log";
+    const char* pid_file = "/tmp/netsh.pid";
+    const char* log_file = "/tmp/netsh.log";
+    //const char* pid_file = "/home/alex/OS_homeworks/netsh/pid";
+    //const char* log_file = "/home/alex/OS_homeworks/netsh/log";
     
     if ((log_fd = become_daemon(pid_file, log_file)) == -1) {
         return -1;
@@ -416,10 +397,8 @@ int main(int argc, char** argv) {
                 close(sock_fd);
                 close(epoll_fd);
                 return -1;
-                //continue;
             }
 
-            dprintf(log_fd, "rhave = %d\n", (int) rhave);
             parse(command, rhave);
 
             if (runpiped(programs, programs.size(), events[i].data.fd, events[i].data.fd, log_fd) < 0) {
