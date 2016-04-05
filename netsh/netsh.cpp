@@ -335,6 +335,7 @@ int main(int argc, char** argv) {
 
     while (1) {
         int n = epoll_wait(epoll_fd, events, MAXEVENTS, -1);
+        vector <int> fds;
 
         for (int i = 0; i < n; i++) {
             if ((events[i].events & EPOLLERR) || (events[i].events & EPOLLHUP) || (!(events[i].events & EPOLLIN))) {
@@ -389,27 +390,59 @@ int main(int argc, char** argv) {
                 continue;
             }
 
-            ssize_t rhave = 0;
             char command[SIZE];
+            int pos = 0;
+            int done = 0;
+            
+            while (!done) {
+                ssize_t rhave = 0;
+                char tmp[SIZE];
 
-            rhave = buf_getline(events[i].data.fd, buf, command);
+                rhave = buf_getline(events[i].data.fd, buf, tmp);
 
-            if (rhave == -1) {
-                continue;
+                if (rhave == -1) {
+                    if (errno == EAGAIN) {
+                        done = 1;
+                    }
+
+                    break;
+                }
+
+                for (int j = 0; j < SIZE; j++) {
+                    command[pos++] = tmp[j];
+
+                    if (tmp[j] == '\0' || tmp[j] == '\n') {
+                        break;
+                    }
+                }
             }
 
-            parse(command, rhave);
+            dprintf(log_fd, "pos = %d\ncommand[%d] = %d\n", pos, pos - 1, (int) command[pos - 1]);
+            parse(command, pos);
 
-            if (runpiped(programs, programs.size(), events[i].data.fd, events[i].data.fd, log_fd) < 0) {
-                custom_dprerr("Error in pipe");
-                unlink(pid_file);
-                close(log_fd);
-                close(sock_fd);
-                close(epoll_fd);
-                return -1;
+
+            if (fork() == 0) {
+                if (runpiped(programs, programs.size(), events[i].data.fd, events[i].data.fd, log_fd) < 0) {
+                    custom_dprerr("Error in pipe");
+                    unlink(pid_file);
+                    close(log_fd);
+                    close(sock_fd);
+                    close(epoll_fd);
+                    return -1;
+                }
+
+                _exit(0);
             }
 
-            close(events[i].data.fd);
+            if (done) {
+                close(events[i].data.fd);
+            }
+        }
+
+        dprintf(log_fd, "size = %d\n", (int) fds.size());
+
+        for (int i = 0; i < (int) fds.size(); i++) {
+            close(fds[i]);
         }
     }
 

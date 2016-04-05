@@ -62,9 +62,13 @@ ssize_t buf_fill(fd_t fd, buf_t *buf, size_t required)
 
         if (have == 0)
             return buf -> size;
-        else if (have == -1)
-            return -1;
-        else if (buf -> size + have >= required)
+        else if (have == -1) {
+            if (errno == EAGAIN) {
+                return -1;
+            }
+
+            continue;
+        } else if (buf -> size + have >= required)
             return buf -> size += have;
 
         buf -> size += have;
@@ -129,8 +133,13 @@ ssize_t buf_getline(fd_t fd, buf_t *buf, char* dest)
         if (rhave == 0)
             break;
 
-        if (rhave == -1)
-            return -1;
+        if (rhave == -1) {
+            if (errno == EAGAIN) {
+                return -1;
+            }
+
+            continue;
+        }
 
         have += rhave;
     }

@@ -1,0 +1,4 @@
+#!/bin/zsh
+
+kill `cat /tmp/netsh.pid`
+rm -f /tmp/netsh.pid
