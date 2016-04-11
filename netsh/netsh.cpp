@@ -16,6 +16,7 @@
 #include <sys/epoll.h>
 #include <vector>
 #include <string.h>
+#include <string>
 
 using namespace std;
 
@@ -267,17 +268,13 @@ int main(int argc, char** argv) {
         return -1;
     }
 
-    buf_t* buf = buf_new(BUF_SIZE);
-
-    if (buf == NULL) {
-        custom_prerr("Error in allocating memory");
-        return -1;
-    }
-
     const char* pid_file = "/tmp/netsh.pid";
     const char* log_file = "/tmp/netsh.log";
     //const char* pid_file = "/home/alex/OS_homeworks/netsh/pid";
     //const char* log_file = "/home/alex/OS_homeworks/netsh/log";
+    vector <int> fin_read(sysconf(_SC_OPEN_MAX), 0);
+    vector <char*> commands(sysconf(_SC_OPEN_MAX), (char*) malloc(SIZE));
+    vector <int> poss(sysconf(_SC_OPEN_MAX), 0);
     
     if ((log_fd = become_daemon(pid_file, log_file)) == -1) {
         return -1;
@@ -390,36 +387,61 @@ int main(int argc, char** argv) {
                 continue;
             }
 
-            char command[SIZE];
-            int pos = 0;
+            char* command = commands[events[i].data.fd];
+            int pos = poss[events[i].data.fd];
             int done = 0;
             
             while (!done) {
                 ssize_t rhave = 0;
-                char tmp[SIZE];
+                char tmp[BUF_SIZE];
 
-                rhave = buf_getline(events[i].data.fd, buf, tmp);
+                rhave = read(events[i].data.fd, tmp, BUF_SIZE);
 
                 if (rhave == -1) {
                     if (errno == EAGAIN) {
+                        custom_dprerr("Read error");
                         done = 1;
                     }
 
                     break;
                 }
 
-                for (int j = 0; j < SIZE; j++) {
+                if (rhave == 0) {
+                    done = 1;
+                    break;
+                }
+
+                dprintf(log_fd, "rhave = %d\n", (int) rhave);
+
+                for (int j = 0; j < rhave; j++) {
                     command[pos++] = tmp[j];
 
-                    if (tmp[j] == '\0' || tmp[j] == '\n') {
+                    if (tmp[j] == '\n') {
+                        fin_read[events[i].data.fd] = 1;
+                        done = 1;
                         break;
                     }
                 }
             }
 
-            dprintf(log_fd, "pos = %d\ncommand[%d] = %d\n", pos, pos - 1, (int) command[pos - 1]);
-            parse(command, pos);
+            commands[events[i].data.fd] = command;
+            poss[events[i].data.fd] = pos;
 
+            if (fin_read[events[i].data.fd]) {
+                command[pos] = '\0';
+            }
+
+            dprintf(log_fd, "pos = %d\ncommand[%d] = %d\n", pos, pos - 1, (int) command[pos - 1]);
+            dprintf(log_fd, "command = %s\n", command);
+
+            if (!fin_read[events[i].data.fd]) {
+                continue;
+            }
+
+            fin_read[events[i].data.fd] = 0;
+            parse(command, pos);
+            poss[events[i].data.fd] = 0;
+            commands[events[i].data.fd] = (char*) malloc(SIZE);
 
             if (fork() == 0) {
                 if (runpiped(programs, programs.size(), events[i].data.fd, events[i].data.fd, log_fd) < 0) {
@@ -448,7 +470,6 @@ int main(int argc, char** argv) {
 
     close(epoll_fd);
     free(events);
-    buf_free(buf);
     close(sock_fd);
     close(log_fd);
     unlink(pid_file);
